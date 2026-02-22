@@ -1,0 +1,51 @@
+# ╔══════════════════════════════════════╗
+# ║   MiniClaw Configuration             ║
+# ╚══════════════════════════════════════╝
+
+telegram:
+  # Get your bot token from @BotFather on Telegram
+  token: "YOUR_BOT_TOKEN_HERE"
+  
+  # Your Telegram user ID(s) — ONLY these users can interact with the bot.
+  # To find your ID: message @userinfobot on Telegram
+  allowed_ids:
+    - 123456789
+    # - 987654321  # add more users if needed
+
+ollama:
+  # Ollama API endpoint (default: local)
+  url: "http://localhost:11434"
+  
+  # Which model to use. Recommendations:
+  #   Raspberry Pi 4 (4GB): llama3.2:1b, phi3:mini, tinyllama
+  #   Raspberry Pi 4 (8GB): llama3.2:3b, mistral:7b-q4
+  #   Laptop (16GB+):       llama3.1:8b, mistral:7b, codellama:7b
+  model: "llama3.2:3b"
+  
+  # If true, commands from Ollama are executed automatically WITHOUT asking.
+  # If false (default, RECOMMENDED), you'll be asked to /yes or /no first.
+  auto_execute: false
+  
+  # Max seconds to wait for Ollama response
+  timeout_seconds: 120
+  
+  # System prompt that shapes Ollama's behavior
+  # Uncomment to override the default:
+  # system_prompt: |
+  #   You are MiniClaw, a sysadmin assistant.
+  #   When asked to do tasks, provide bash commands in ```bash blocks.
+  #   Be concise — responses are read on a phone.
+
+executor:
+  # Where uploaded scripts and files are stored
+  workspace: "~/.miniclaw/workspace"
+  
+  # Max seconds a command can run before being killed
+  timeout_seconds: 60
+  
+  # Max output bytes per command (prevents flooding Telegram)
+  max_output_bytes: 4000
+
+scheduler:
+  # Where cron jobs are persisted between restarts
+  persist_file: "~/.miniclaw/crontab.json"
