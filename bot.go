@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -118,6 +119,8 @@ func (b *Bot) handleMessage(msg *tgbotapi.Message) {
 		b.handleCatFile(msg, strings.TrimPrefix(text, "/cat "))
 	case strings.HasPrefix(text, "/rm "):
 		b.handleDeleteFile(msg, strings.TrimPrefix(text, "/rm "))
+	case strings.HasPrefix(text, "/download "):
+		b.handleDownload(msg, strings.TrimPrefix(text, "/download "))
 	case strings.HasPrefix(text, "/ask "):
 		b.handleAsk(msg, strings.TrimPrefix(text, "/ask "))
 	case text == "/clear":
@@ -145,6 +148,7 @@ func (b *Bot) handleHelp(msg *tgbotapi.Message) {
 /ls — List workspace files
 /cat <file> — View file contents
 /rm <file> — Delete a file
+/download <file> — Download file from workspace
 /status — System health report
 
 *AI Assistant:*
@@ -157,8 +161,10 @@ Just type naturally — Ollama responds and suggests commands
 /cron list
 /cron rm <id>
 
-*File Upload:*
+*File Management:*
 Send any file → auto-saved to workspace
+Upload same filename → replaces existing file
+/download <file> — get file sent back to you
 Then use /run <filename> to execute it
 
 *Safety:*
@@ -283,6 +289,22 @@ func (b *Bot) handleDeleteFile(msg *tgbotapi.Message, filename string) {
 	b.reply(msg, fmt.Sprintf("🗑 Deleted: `%s`", filename))
 }
 
+func (b *Bot) handleDownload(msg *tgbotapi.Message, filename string) {
+	filename = strings.TrimSpace(filepath.Base(filename))
+	path := filepath.Join(b.config.Executor.Workspace, filename)
+
+	if _, err := os.Stat(path); err != nil {
+		b.reply(msg, "❌ File not found: `"+filename+"`")
+		return
+	}
+
+	doc := tgbotapi.NewDocument(msg.Chat.ID, tgbotapi.FilePath(path))
+	doc.Caption = fmt.Sprintf("📥 %s", filename)
+	if _, err := b.api.Send(doc); err != nil {
+		b.reply(msg, "❌ Error sending file: "+err.Error())
+	}
+}
+
 func (b *Bot) handleFileUpload(msg *tgbotapi.Message) {
 	doc := msg.Document
 	fileConfig := tgbotapi.FileConfig{FileID: doc.FileID}
@@ -313,8 +335,8 @@ func (b *Bot) handleFileUpload(msg *tgbotapi.Message) {
 		return
 	}
 
-	b.reply(msg, fmt.Sprintf("💾 Saved: `%s` (%s)\n\nRun with: `/run %s`",
-		doc.FileName, formatSize(int64(len(data))), doc.FileName))
+	b.reply(msg, fmt.Sprintf("💾 Saved: `%s` (%s)\n\nRun with: `/run %s`\nDownload: `/download %s`",
+		doc.FileName, formatSize(int64(len(data))), doc.FileName, doc.FileName))
 	_ = path
 }
 
